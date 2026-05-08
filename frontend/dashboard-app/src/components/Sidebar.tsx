@@ -18,7 +18,14 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-brand">
         <h1>🥋 Sensei</h1>
-        <p>AI Code Review</p>
+        <div className="status-line">
+          <span className="pulse-dot" />
+          AI CODE REVIEW
+        </div>
+        <div className="agent-badge">
+          <span className="dot" />
+          Agent: Online
+        </div>
       </div>
 
       <nav className="sidebar-nav">
@@ -37,7 +44,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <p>Sensei v1.0 — Phase 4</p>
+        <span className="version-pill">Sensei v1.0 — Phase 4</span>
       </div>
     </aside>
   );

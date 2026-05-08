@@ -1,35 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { CheckCircle, Clock } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import {
-  fetchEscalations,
-  resolveEscalation,
-  type Escalation,
+  fetchEscalations, resolveEscalation, type Escalation,
 } from "../api/client";
-
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const hours = Math.floor(diff / 3600000);
-  if (hours < 1) return "< 1h";
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
-}
 
 export default function EscalationsPage() {
   const [escalations, setEscalations] = useState<Escalation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastFetch, setLastFetch] = useState<Date | null>(null);
 
-  useEffect(() => {
-    fetchEscalations().then((e) => {
-      setEscalations(e);
-      setLoading(false);
-    });
+  const load = useCallback(() => {
+    fetchEscalations().then((e) => { setEscalations(e); setLoading(false); setLastFetch(new Date()); });
   }, []);
+
+  useEffect(() => { load(); const id = setInterval(load, 30000); return () => clearInterval(id); }, [load]);
 
   const handleResolve = async (id: number) => {
     await resolveEscalation(id);
-    setEscalations((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, resolved: true } : e))
-    );
+    setEscalations((prev) => prev.map((e) => (e.id === id ? { ...e, resolved: true } : e)));
   };
 
   const open = escalations.filter((e) => !e.resolved);
@@ -40,21 +29,14 @@ export default function EscalationsPage() {
       <div className="page-header">
         <h2>Escalation Queue</h2>
         <p>PRs flagged for senior review due to low AI confidence</p>
+        {lastFetch && <div className="last-updated">Last updated: {formatDistanceToNow(lastFetch, { addSuffix: true })}</div>}
       </div>
 
       {/* ── Open Escalations ─────────────────────────── */}
       <div className="card" style={{ marginBottom: 24 }}>
         <div className="card-header">
-          <span className="card-title">
-            Open ({open.length})
-          </span>
-          <span
-            style={{
-              fontSize: 11,
-              color: open.length > 0 ? "var(--accent-red)" : "var(--accent-teal)",
-              fontWeight: 600,
-            }}
-          >
+          <span className="card-title">Open ({open.length})</span>
+          <span style={{ fontSize: 11, color: open.length > 0 ? "var(--red)" : "var(--teal)", fontWeight: 600 }}>
             {open.length > 0 ? "Action Needed" : "All Clear ✓"}
           </span>
         </div>
@@ -69,79 +51,50 @@ export default function EscalationsPage() {
             ))}
           </div>
         ) : open.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "40px 0",
-              color: "var(--text-muted)",
-              fontSize: 14,
-            }}
-          >
-            <CheckCircle
-              size={40}
-              style={{ color: "var(--accent-teal)", marginBottom: 12 }}
-            />
-            <div>No open escalations — the AI is confident today! 🎉</div>
+          <div className="empty-state" style={{ border: "none", padding: "40px 0" }}>
+            <div className="scale-in" style={{ marginBottom: 12 }}>
+              <CheckCircle size={40} style={{ color: "var(--teal)" }} />
+            </div>
+            <h3 style={{ fontSize: 14, color: "var(--text-secondary)" }}>No open escalations</h3>
+            <p style={{ color: "var(--teal)", fontSize: 13 }}>The AI is confident today! 🎉</p>
           </div>
         ) : (
           <div className="escalation-list">
             {open.map((esc) => (
-              <div key={esc.id} className="card escalation-item" style={{ padding: 18 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: "0 0 auto" }}>
-                  <Clock size={16} style={{ color: "var(--accent-yellow)" }} />
-                  <span
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: "var(--accent-yellow)",
-                    }}
-                  >
-                    {timeAgo(esc.created_at)}
+              <div key={esc.id} className="escalation-item">
+                <div className="accent-bar" />
+
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0, minWidth: 50 }}>
+                  <Clock size={16} style={{ color: "var(--amber)" }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--amber)" }}>
+                    Waiting {formatDistanceToNow(new Date(esc.created_at))}
                   </span>
                 </div>
 
                 <div className="escalation-meta">
                   <div className="escalation-title">
-                    PR #{esc.pr_number}: {esc.pr_title || "Untitled"}
+                    <span className="pr-badge" style={{ marginRight: 8 }}>#{esc.pr_number}</span>
+                    {esc.pr_title || "Untitled"}
                   </div>
-                  <div className="escalation-sub">
-                    {esc.file_path || esc.repo_full_name} • Assigned to @{esc.senior_username}
+                  <div className="escalation-sub" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                    {esc.file_path || esc.repo_full_name}
                   </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--text-secondary)",
-                      marginTop: 4,
-                    }}
-                  >
-                    {esc.reason}
+                  <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{esc.reason}</div>
+                  <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center" }}>
+                    {esc.confidence != null && (
+                      <span className="badge high" style={{ fontSize: 10 }}>
+                        {((esc.confidence || 0) * 100).toFixed(0)}% confidence
+                      </span>
+                    )}
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "var(--purple)" }}>
+                      @{esc.senior_username}
+                    </span>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
-                  <div style={{ textAlign: "center" }}>
-                    <div className="confidence-bar" style={{ width: 60 }}>
-                      <div
-                        className="confidence-fill"
-                        style={{
-                          width: `${(esc.confidence || 0) * 100}%`,
-                          background: "var(--accent-red)",
-                        }}
-                      />
-                    </div>
-                    <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
-                      {((esc.confidence || 0) * 100).toFixed(0)}%
-                    </div>
-                  </div>
-
-                  <button
-                    className="btn btn-teal"
-                    onClick={() => handleResolve(esc.id)}
-                  >
-                    <CheckCircle size={14} />
-                    Resolve
-                  </button>
-                </div>
+                <button className="btn btn-teal" onClick={() => handleResolve(esc.id)}>
+                  <CheckCircle size={14} /> Resolve
+                </button>
               </div>
             ))}
           </div>
@@ -151,25 +104,18 @@ export default function EscalationsPage() {
       {/* ── Resolved ─────────────────────────────────── */}
       {resolved.length > 0 && (
         <div className="card">
-          <div className="card-header">
-            <span className="card-title">Resolved ({resolved.length})</span>
-          </div>
+          <div className="card-header"><span className="card-title">Resolved ({resolved.length})</span></div>
           <div className="escalation-list">
             {resolved.map((esc) => (
-              <div
-                key={esc.id}
-                className="escalation-item"
-                style={{ padding: "12px 0", opacity: 0.6 }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: "0 0 auto" }}>
-                  <CheckCircle size={16} style={{ color: "var(--accent-teal)" }} />
-                </div>
+              <div key={esc.id} className="escalation-item" style={{ opacity: 0.5 }}>
+                <CheckCircle size={16} style={{ color: "var(--teal)", flexShrink: 0 }} />
                 <div className="escalation-meta">
                   <div className="escalation-title">
-                    PR #{esc.pr_number}: {esc.pr_title || "Untitled"}
+                    <span className="pr-badge" style={{ marginRight: 8 }}>#{esc.pr_number}</span>
+                    {esc.pr_title || "Untitled"}
                   </div>
                   <div className="escalation-sub">
-                    Resolved • @{esc.senior_username}
+                    Resolved • <span style={{ color: "var(--purple)" }}>@{esc.senior_username}</span>
                   </div>
                 </div>
               </div>
