@@ -1,0 +1,56 @@
+<!-- 
+  Sensei Dashboard — Frontend Entry Point
+  PR metrics, DNA map, explainability log
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sensei — AI Code Review Dashboard</title>
+  <meta name="description" content="Sensei autonomous code review platform dashboard" />
+  <link rel="stylesheet" href="dashboard/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="dashboard-header">
+      <h1>🥋 Sensei</h1>
+      <p>Autonomous Code Review Platform</p>
+    </header>
+
+    <nav class="dashboard-nav">
+      <a href="#reviews" class="nav-link active">Reviews</a>
+      <a href="#dna-map" class="nav-link">DNA Map</a>
+      <a href="#escalations" class="nav-link">Escalations</a>
+      <a href="#scanner" class="nav-link">Scanner</a>
+      <a href="#settings" class="nav-link">Settings</a>
+    </nav>
+
+    <main class="dashboard-main">
+      <!-- Content loaded dynamically -->
+      <section id="reviews" class="dashboard-section">
+        <h2>PR Review Activity</h2>
+        <div id="review-stats" class="stats-grid"></div>
+        <div id="review-list" class="review-list"></div>
+      </section>
+
+      <section id="dna-map" class="dashboard-section hidden">
+        <h2>Review DNA Map</h2>
+        <div id="dna-visualization" class="dna-map-container"></div>
+      </section>
+
+      <section id="escalations" class="dashboard-section hidden">
+        <h2>Escalation Log</h2>
+        <div id="escalation-list" class="escalation-list"></div>
+      </section>
+
+      <section id="scanner" class="dashboard-section hidden">
+        <h2>Nightly Scan Findings</h2>
+        <div id="scan-findings" class="findings-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="dashboard/app.js" type="module"></script>
+</body>
+</html>
