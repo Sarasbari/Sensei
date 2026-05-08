@@ -85,10 +85,19 @@ async function migrate() {
       senior_username TEXT NOT NULL,
       created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS proactive_scans (
+      id              SERIAL PRIMARY KEY,
+      repo_id         TEXT NOT NULL,
+      files_scanned   INT NOT NULL,
+      risks_found     INT NOT NULL,
+      issues_created  INT NOT NULL,
+      scanned_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   `;
 
   await _pool.query(createTable);
-  console.log("🗄️  Database migrated (repos, reviews, escalations tables ready)");
+  console.log("🗄️  Database migrated (repos, reviews, escalations, proactive_scans tables ready)");
 }
 
 /**
@@ -111,6 +120,16 @@ export async function upsertRepo(githubRepoId, fullName, installationId) {
   `;
 
   await _pool.query(upsert, [githubRepoId, fullName, installationId]);
+}
+
+/**
+ * Get installation ID for a repo.
+ */
+export async function getInstallationId(repoFullName) {
+  const q = `SELECT installation_id FROM repos WHERE full_name = $1 LIMIT 1`;
+  const res = await _pool.query(q, [repoFullName]);
+  if (res.rows.length === 0) return null;
+  return res.rows[0].installation_id;
 }
 
 /**
@@ -167,4 +186,15 @@ export async function closePool() {
     await _pool.end();
     console.log("🗄️  PostgreSQL pool closed");
   }
+}
+
+/**
+ * Log proactive scan results.
+ */
+export async function logScanResult(repoId, filesScanned, risksFound, issuesCreated) {
+  const q = `
+    INSERT INTO proactive_scans (repo_id, files_scanned, risks_found, issues_created)
+    VALUES ($1, $2, $3, $4)
+  `;
+  await _pool.query(q, [repoId, filesScanned, risksFound, issuesCreated]);
 }

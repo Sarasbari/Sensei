@@ -15,6 +15,7 @@ import { healthRouter } from "./routes/health.js";
 import { initQueue, closeQueue } from "./services/queue.js";
 import { initGitHubApp } from "./services/github.js";
 import { initPool, closePool } from "./db/pool.js";
+import { startNightlyCron } from "./services/scanner.js";
 
 const PORT = process.env.PORT || 3000;
 
@@ -66,6 +67,7 @@ async function start() {
   await initPool();
   initQueue();
   initGitHubApp();
+  startNightlyCron();
 
   app.listen(PORT, () => {
     console.log(`🥋 Sensei webhook server listening on :${PORT}`);
