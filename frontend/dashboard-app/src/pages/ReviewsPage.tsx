@@ -153,73 +153,79 @@ export default function ReviewsPage() {
       </div>
 
       {/* ── RAG Trace Drawer ────────────────────────────── */}
-      {selectedReview && (
-        <div className="modal-overlay" onClick={closeDrawer}>
-          <div className="modal-drawer rag-drawer" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>RAG Trace Details</h3>
-              <button className="modal-close" onClick={closeDrawer}>
-                <X size={16} />
-              </button>
-            </div>
+      {selectedReview && (() => {
+        // Parse the markdown body
+        const body = selectedReview.body || "";
+        const whyMatch = body.match(/\*\*Why:\*\*([\s\S]*?)\*\*Suggested Fix:\*\*/);
+        const rationale = whyMatch ? whyMatch[1].trim() : (selectedReview.explanation || "No rationale provided.");
+        
+        const snippetMatch = body.match(/```[a-z]*\n([\s\S]*?)```/);
+        const snippet = snippetMatch ? snippetMatch[1].trim() : (selectedReview.suggestion || "No code snippet provided.");
 
-            <div className="rag-drawer-section">
-              <div className="rag-drawer-section-title">AI Rationale:</div>
-              <p className="rag-drawer-text">
-                "{selectedReview.body?.slice(0, 200) || `A ${selectedReview.issue || "potential issue"} in ${selectedReview.severity || "code"} sanitization. It is AI confident :facing the usernotes to decision, the natoral concerns ${selectedReview.issue || "Potential vulnerability"} in error input sanitization.`}"
-              </p>
-            </div>
+        const sourceMatch = body.match(/\*\*Source:\*\*([^\n]+)/);
+        const source = sourceMatch ? sourceMatch[1].trim() : "AI identified pattern";
 
-            <div className="rag-drawer-section">
-              <div className="rag-drawer-section-title">Code Snippet ({selectedReview.file_path?.split("/").pop() || "file"})</div>
-              <div className="rag-code-block">
-                <pre>{selectedReview.body?.slice(0, 300) || `export default (ctx, next) => {\n  verifyAccessHeaders.accept()\n  start_validate=withStart.get('validators-options()');\n  return ctx$ct\n}`}</pre>
+        return (
+          <div className="modal-overlay" onClick={closeDrawer}>
+            <div className="modal-drawer rag-drawer" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>RAG Trace Details</h3>
+                <button className="modal-close" onClick={closeDrawer}>
+                  <X size={16} />
+                </button>
               </div>
-            </div>
 
-            {tracesLoading ? (
-              <div>
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="skeleton" style={{ height: 40, marginBottom: 8 }} />
-                ))}
+              <div className="rag-drawer-section">
+                <div className="rag-drawer-section-title">AI Rationale:</div>
+                <p className="rag-drawer-text" style={{ whiteSpace: "pre-wrap" }}>
+                  {rationale}
+                </p>
               </div>
-            ) : traces.length > 0 ? (
-              <>
-                <div className="rag-drawer-section">
-                  <div className="rag-drawer-section-title">Documentation References:</div>
-                  {traces.slice(0, 4).map((t, i) => (
-                    <a key={i} href="#" className="rag-doc-link">
-                      OWASP XSS Prevention Cheat Sheet
-                    </a>
+
+              <div className="rag-drawer-section">
+                <div className="rag-drawer-section-title">Code Snippet ({selectedReview.file_path?.split("/").pop() || "file"})</div>
+                <div className="rag-code-block">
+                  <pre>{snippet}</pre>
+                </div>
+              </div>
+
+              {tracesLoading ? (
+                <div>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="skeleton" style={{ height: 40, marginBottom: 8 }} />
                   ))}
                 </div>
-
-                <div className="rag-drawer-section">
-                  <div className="rag-drawer-section-title">Decision Path:</div>
-                  <div className="rag-decision-flow">
-                    {traces.slice(0, 3).map((t, i) => (
-                      <div key={i} className="rag-decision-step">
-                        <span className="rag-decision-badge" style={{
-                          background: i === 0 ? "var(--blue-dim)" : i === 1 ? "var(--emerald-dim)" : "var(--amber-dim)",
-                          color: i === 0 ? "var(--blue)" : i === 1 ? "var(--emerald)" : "var(--amber)",
-                        }}>
-                          {i === 0 ? "Analysis" : i === 1 ? "Pattern Match" : "Recommendation"}
-                        </span>
-                        {i < 2 && <span className="rag-decision-arrow">→</span>}
-                      </div>
-                    ))}
+              ) : (
+                <>
+                  <div className="rag-drawer-section">
+                    <div className="rag-drawer-section-title">Historical Knowledge Source:</div>
+                    <div className="rag-doc-link" style={{ cursor: 'default', textDecoration: 'none', color: 'var(--text-secondary)' }}>
+                      {source}
+                    </div>
                   </div>
-                </div>
-              </>
-            ) : (
-              <div className="rag-drawer-section">
-                <div className="rag-drawer-section-title">Retrieved from DNA:</div>
-                <p style={{ fontSize: 12, color: "var(--text-muted)" }}>No trace data available for this review.</p>
-              </div>
-            )}
+
+                  <div className="rag-drawer-section">
+                    <div className="rag-drawer-section-title">Decision Path:</div>
+                    <div className="rag-decision-flow">
+                      {[1, 2, 3].map((t, i) => (
+                        <div key={i} className="rag-decision-step">
+                          <span className="rag-decision-badge" style={{
+                            background: i === 0 ? "var(--blue-dim)" : i === 1 ? "var(--emerald-dim)" : "var(--amber-dim)",
+                            color: i === 0 ? "var(--blue)" : i === 1 ? "var(--emerald)" : "var(--amber)",
+                          }}>
+                            {i === 0 ? "Vector Search" : i === 1 ? "Context Injection" : "LLM Inference"}
+                          </span>
+                          {i < 2 && <span className="rag-decision-arrow">→</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
