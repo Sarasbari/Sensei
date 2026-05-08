@@ -4,7 +4,7 @@ interface StatCardProps {
   title: string;
   value: string | number;
   label: string;
-  color: "orange" | "amber" | "teal" | "blue";
+  color: "orange" | "amber" | "teal" | "blue" | "emerald";
   icon: ReactNode;
   isPercentage?: boolean;
 }
@@ -25,7 +25,7 @@ export default function StatCard({ title, value, label, color, icon, isPercentag
       const current = numVal * eased;
 
       if (isPercentage) {
-        setDisplay(parseFloat(current.toFixed(1)).toFixed(1) + "%");
+        setDisplay(parseFloat(current.toFixed(1)).toFixed(0) + "%");
       } else {
         setDisplay(Math.round(current).toLocaleString());
       }
@@ -36,12 +36,14 @@ export default function StatCard({ title, value, label, color, icon, isPercentag
   }, [value, isPercentage]);
 
   return (
-    <div ref={ref} className={`card stat-card ${color}`}>
-      <div className="card-header">
-        <span className="card-title">{title}</span>
-        <div className="stat-icon">{icon}</div>
+    <div ref={ref} className={`stat-card ${color}`}>
+      <div className="card-title" style={{ marginBottom: 8, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)" }}>
+        {title}
       </div>
-      <div className="stat-value">{display}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="stat-icon">{icon}</div>
+        <div className="stat-value">{display}</div>
+      </div>
       <div className="stat-label">{label}</div>
     </div>
   );
