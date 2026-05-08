@@ -16,6 +16,8 @@ env/
 # Node
 node_modules/
 npm-debug.log*
+.vite/
+dist/
 
 # Environment
 .env
