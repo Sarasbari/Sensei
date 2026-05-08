@@ -136,6 +136,30 @@ export async function recordEscalation(prNumber, repoFullName, reason, seniorUse
 }
 
 /**
+ * Update outcome of a specific review (e.g. when corrected).
+ */
+export async function updateReviewOutcome(prNumber, repoFullName, filePath, outcome) {
+  const q = `
+    UPDATE reviews 
+    SET outcome = $1 
+    WHERE pr_number = $2 AND repo_full_name = $3 AND file_path = $4
+  `;
+  await _pool.query(q, [outcome, prNumber, repoFullName, filePath]);
+}
+
+/**
+ * Update outcome of all reviews in a PR (e.g. when accepted).
+ */
+export async function updateAllReviewsOutcome(prNumber, repoFullName, outcome) {
+  const q = `
+    UPDATE reviews
+    SET outcome = $1
+    WHERE pr_number = $2 AND repo_full_name = $3 AND outcome != 'corrected'
+  `;
+  await _pool.query(q, [outcome, prNumber, repoFullName]);
+}
+
+/**
  * Gracefully close the pool.
  */
 export async function closePool() {
