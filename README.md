@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./assets/banner.jpg" alt="Sensei AI Banner" width="100%" />
+  <img src="./assets/banner.png" alt="Sensei AI Banner" width="100%" />
 
   <h1>Sensei 🥷</h1>
   <p><strong>Autonomous, Context-Aware AI Code Reviewer & Explainability Dashboard</strong></p>
