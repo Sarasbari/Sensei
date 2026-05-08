@@ -42,7 +42,7 @@ GitHub PR → Webhook → BullMQ → AI Review (Groq + ChromaDB RAG) → GitHub 
 docker-compose up -d
 ```
 
-This starts PostgreSQL (5432), Redis (6379), and ChromaDB (8000).
+This starts PostgreSQL (port 5433), Redis (6379), and ChromaDB (8000) with persistent named volumes.
 
 ### 2. Install & configure
 

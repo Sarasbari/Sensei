@@ -23,7 +23,7 @@ const { Pool } = pg;
 const REPO_FULL_NAME = "Sarasbari/Sensei";
 const COLLECTION_NAME = `review_dna_${REPO_FULL_NAME.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
 
-const ENGINEERS = ["alice", "bob", "carol", "dave"];
+const ENGINEERS = ["Saras", "Prajval", "Abhay", "Tushar"];
 
 const PATTERN_TYPES = [
   "Security", "Input Validation", "SQL Safety", "Error Handling",
