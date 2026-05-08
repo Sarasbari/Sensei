@@ -63,6 +63,8 @@ async function migrate() {
       github_repo_id  BIGINT UNIQUE NOT NULL,
       full_name       TEXT NOT NULL,
       installation_id BIGINT,
+      ingestion_status TEXT DEFAULT 'pending',
+      ingested_at     TIMESTAMPTZ,
       connected_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
@@ -83,6 +85,7 @@ async function migrate() {
       repo_full_name  TEXT NOT NULL,
       reason          TEXT NOT NULL,
       senior_username TEXT NOT NULL,
+      resolved        BOOLEAN NOT NULL DEFAULT FALSE,
       created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 

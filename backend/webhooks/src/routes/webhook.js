@@ -11,7 +11,7 @@
 
 import { Router } from "express";
 import { verifySignature } from "../middleware/verifySignature.js";
-import { enqueue } from "../services/queue.js";
+import { enqueue, enqueueCorrection } from "../services/queue.js";
 import { upsertRepo } from "../db/pool.js";
 
 export const webhookRouter = Router();
@@ -97,8 +97,14 @@ webhookRouter.post("/github", verifySignature, async (req, res) => {
   // enqueue() does NOT await the job — it only adds to Redis and returns the
   // job ID. The worker process picks it up separately.
   try {
-    const jobId = await enqueue(jobData);
-    console.log(`✅ Queued job ${jobId} for PR #${pr.number} (${repo.full_name})`);
+    let jobId;
+    if (eventAction === "pull_request_review_comment.edited") {
+      jobId = await enqueueCorrection(jobData);
+      console.log(`✅ Queued correction job ${jobId} for PR #${pr.number} (${repo.full_name})`);
+    } else {
+      jobId = await enqueue(jobData);
+      console.log(`✅ Queued review job ${jobId} for PR #${pr.number} (${repo.full_name})`);
+    }
   } catch (err) {
     console.error("⚠️  Failed to enqueue:", err.message);
     // Still return 200 — we don't want GitHub to retry because of our queue issue.
