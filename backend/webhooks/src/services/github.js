@@ -75,6 +75,11 @@ import { recordReview, recordEscalation } from "../db/pool.js";
 export async function postReviewComment(octokit, prNumber, repoFullName, comment, commitId) {
   const [owner, repo] = repoFullName.split("/");
 
+  const cleanSourcePR = comment.source_pr ? String(comment.source_pr).replace(/^#+/, "") : 'N/A';
+  const sourceLine = cleanSourcePR !== 'N/A' 
+    ? `**Source:** ${comment.source_engineer || 'Unknown'} flagged this in PR #${cleanSourcePR}`
+    : `**Source:** AI identified pattern`;
+
   const markdown = `## Sensei Review — \`${comment.file}:${comment.line}\`
 **Issue:** ${comment.issue} | **Severity:** ${comment.severity}
 **Why:** ${comment.explanation}
@@ -82,7 +87,7 @@ export async function postReviewComment(octokit, prNumber, repoFullName, comment
 \`\`\`javascript
 ${comment.suggestion}
 \`\`\`
-**Source:** ${comment.source_engineer || 'Unknown'} flagged this in PR #${comment.source_pr || 'N/A'}
+${sourceLine}
 **Confidence:** ${(comment.confidence * 100).toFixed(1)}% | Powered by Groq LLaMA 3.3 70B`;
 
   try {
