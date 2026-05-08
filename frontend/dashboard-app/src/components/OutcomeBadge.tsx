@@ -9,6 +9,7 @@ export default function OutcomeBadge({ outcome }: Props) {
     accepted: "Accepted",
     corrected: "Corrected",
     dismissed: "Dismissed",
+    escalated: "Escalated",
     posted: "Posted",
     posted_fallback: "Posted",
   };
