@@ -75,8 +75,26 @@ async function startWorker() {
           }
 
           if (escalate) {
-            const seniorUsername = process.env.SENIOR_ENGINEER_USERNAME || data.pr.author;
-            await escalatePR(octokit, data.pr.number, repoId, "Some AI review comments had low confidence.", seniorUsername);
+            const seniorUsername = process.env.SENIOR_ENGINEER_USERNAME || "";
+            const prAuthor = data.pr.author || data.pr.user?.login || "";
+
+            if (seniorUsername && seniorUsername !== prAuthor) {
+              await escalatePR(octokit, data.pr.number, repoId, "Some AI review comments had low confidence.", seniorUsername);
+            } else {
+              console.warn(`⚠️ Skipping GitHub review request — senior reviewer (${seniorUsername || "not set"}) is the PR author or not configured. Escalation recorded in DB only.`);
+              // Still record the escalation in the database
+              try {
+                const [eOwner, eRepo] = repoId.split("/");
+                await pool().query(
+                  `INSERT INTO escalations (pr_number, repo_full_name, reason, senior_username, created_at)
+                   VALUES ($1, $2, $3, $4, NOW())
+                   ON CONFLICT DO NOTHING`,
+                  [data.pr.number, repoId, "Low AI confidence — senior reviewer is PR author", prAuthor]
+                );
+              } catch (dbErr) {
+                console.error("Failed to record escalation in DB:", dbErr.message);
+              }
+            }
           }
 
           console.log("✅ Review posted successfully.");
