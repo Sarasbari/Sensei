@@ -1,190 +1,144 @@
-# 🥋 Sensei — Autonomous AI Code Review Platform
+<div align="center">
+  <img src="./assets/banner.jpg" alt="Sensei AI Banner" width="100%" />
 
-Sensei is an autonomous code review bot that learns from your team's senior engineers and reviews every PR using RAG-powered AI. It posts inline GitHub comments, escalates uncertain reviews to humans, improves from corrections, and proactively scans for risks.
+  <h1>Sensei 🥷</h1>
+  <p><strong>Autonomous, Context-Aware AI Code Reviewer & Explainability Dashboard</strong></p>
+
+  <p>
+    <a href="#features">Features</a> •
+    <a href="#architecture">Architecture</a> •
+    <a href="#getting-started">Getting Started</a> •
+    <a href="#tech-stack">Tech Stack</a>
+  </p>
+</div>
+
+---
+
+## 📖 Overview
+
+**Sensei** is a next-generation AI code review system designed to augment engineering teams, not replace them. 
+
+Unlike standard AI reviewers that offer generic linting advice, Sensei uses **Retrieval-Augmented Generation (RAG)** to learn from your team's historical code changes and past PR reviews. It builds a **"Review DNA"** of your organization, ensuring its feedback is highly contextual, culturally aligned, and practically useful. 
+
+Coupled with a stunning, professional-grade dashboard, Sensei provides full explainability for every AI decision, allowing engineers to look under the hood of the AI's rationale.
+
+## ✨ Features
+
+- **🧠 Context-Aware Reviews (RAG)**: Sensei queries a vector database (ChromaDB) of past reviews before commenting, ensuring feedback aligns with your team's specific architectural patterns.
+- **⚡ Real-Time GitHub Integration**: Listens to PR events via webhooks and automatically posts inline code review comments.
+- **🎯 Escalation Queue**: Calculates a confidence score for every AI suggestion. Low-confidence flags are automatically routed to a human Senior Engineer for review.
+- **🔍 Explainability Log**: A sleek dashboard UI that demystifies AI decisions. View the exact documentation, historical PRs, and decision path the AI took to generate a comment.
+- **📈 Review DNA Map**: Visualize your team's coding patterns and AI interaction hotspots via an interactive, gradient heatmap.
+- **🔁 Self-Correcting Pipeline**: If an engineer modifies or corrects an AI comment on GitHub, Sensei ingests the correction to improve future reviews.
 
 ---
 
 ## 🏗️ Architecture
 
-```
-GitHub PR → Webhook → BullMQ → AI Review (Groq + ChromaDB RAG) → GitHub Comments
-                                    ↕
-                           Self-Improvement Loop
-                     (senior corrections → re-embed)
-                                    ↕
-                        React Explainability Dashboard
-```
+Sensei is built with a decoupled, event-driven architecture designed for scale and responsiveness.
 
-### Components
-
-| Component | Directory | Description |
-|---|---|---|
-| **Webhook Server** | `backend/webhooks/` | Express server receiving GitHub App events |
-| **Worker** | `backend/webhooks/src/worker.js` | BullMQ workers for reviews, corrections, ingestion |
-| **AI Reviewer** | `backend/webhooks/src/services/reviewer.js` | RAG engine: ChromaDB retrieval + Groq LLM |
-| **Ingestion Pipeline** | `backend/ingestion/` | Fetches merged PRs, builds DNA records, embeds |
-| **Nightly Scanner** | `backend/webhooks/src/services/scanner.js` | Proactive risk detection via cron |
-| **Dashboard** | `frontend/dashboard-app/` | React + TypeScript explainability UI |
+1. **GitHub App Webhook**: Receives `pull_request` events.
+2. **Message Queue (Redis + BullMQ)**: Distributes events to specialized background workers (`pr-review-queue`, `ingestion-queue`, `correction-queue`).
+3. **Vector Knowledge Base (ChromaDB)**: Embeds and stores historical code changes, providing context to the LLM.
+4. **LLM Inference (Groq + LLaMA 3.3 70B)**: Ultra-fast generation of JSON-structured review feedback.
+5. **PostgreSQL**: Stores relational metadata (escalations, review outcomes, proactive scans).
+6. **React Dashboard**: Consumes the metadata to present real-time analytics and RAG traces.
 
 ---
 
-## 🚀 Quick Start (3 commands)
+## 🛠️ Tech Stack
+
+### Frontend (Dashboard)
+- **React 19 & Vite** — Lightning-fast development and optimized builds.
+- **CSS3 Variables & Grid** — Custom "Emerald" professional theme with responsive layouts.
+- **Recharts** — Dynamic, data-driven charts.
+- **Lucide React** — Crisp, modern iconography.
+
+### Backend (Webhooks & Workers)
+- **Node.js & Express** — Webhook ingestion server.
+- **BullMQ & Redis** — Robust job queuing and rate-limit handling.
+- **ChromaDB** — Vector database for RAG context retrieval.
+- **PostgreSQL (Neon)** — Relational storage for metadata and escalations.
+- **Groq API (LLaMA 3.3 70B)** — High-speed, high-quality AI inference.
+- **Octokit** — GitHub App authentication and API interactions.
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- **Node.js** ≥ 20
-- **Docker** (for Postgres, Redis, ChromaDB)
-- **GitHub App** created ([guide](https://docs.github.com/en/apps/creating-github-apps))
-- **Groq API Key** ([free at console.groq.com](https://console.groq.com/keys))
+- Node.js (v18+)
+- Redis Server (running locally or via Docker)
+- PostgreSQL Database (local or Neon.tech)
+- ChromaDB instance
+- Groq API Key
+- GitHub App Credentials
 
-### 1. Start infrastructure
-
+### 1. Clone the repository
 ```bash
-docker-compose up -d
+git clone https://github.com/your-username/sensei.git
+cd sensei
 ```
 
-This starts PostgreSQL (port 5433), Redis (6379), and ChromaDB (8000) with persistent named volumes.
-
-### 2. Install & configure
-
+### 2. Setup the Backend
 ```bash
-# Backend
 cd backend/webhooks
 npm install
+
+# Copy environment variables
 cp .env.example .env
-# Edit .env with your GitHub App credentials and Groq API key
+# Fill in your GROQ_API_KEY, DATABASE_URL, CHROMADB_URL, and GitHub App credentials
+```
 
-# Seed demo data (optional — creates 50 DNA records + 2 weeks of reviews)
-npm run seed
-
-# Frontend
+### 3. Setup the Frontend Dashboard
+```bash
 cd ../../frontend/dashboard-app
 npm install
 ```
 
-### 3. Run
+### 4. Run the Platform
 
+You will need three terminal windows to run the full stack locally:
+
+**Terminal 1: Webhook Server**
 ```bash
-# Terminal 1: Backend server
-cd backend/webhooks && npm run start
-
-# Terminal 2: Worker (processes review jobs)
-cd backend/webhooks && npm run worker
-
-# Terminal 3: Dashboard
-cd frontend/dashboard-app && npx vite
-
-# Terminal 4: Expose to GitHub (optional)
-ngrok http 3001
+cd backend/webhooks
+npm start
 ```
 
-Then open **http://localhost:5173** for the dashboard.
-
----
-
-## 📡 API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/webhooks/github` | GitHub App webhook receiver |
-| `POST` | `/api/repos/connect` | Connect a repo + start ingestion |
-| `GET` | `/api/metrics/cycle-time` | PR cycle time before/after Sensei |
-| `GET` | `/api/reviews` | Review log with pagination |
-| `GET` | `/api/reviews/:id/trace` | RAG trace for a specific review |
-| `GET` | `/api/escalations` | Escalation queue |
-| `POST` | `/api/escalations/:id/resolve` | Resolve an escalation |
-| `GET` | `/api/engineers` | Engineer DNA profiles |
-| `GET` | `/api/dashboard/stats` | Dashboard overview stats |
-| `GET` | `/health` | Service health check |
-
-### Connect a repo
-
+**Terminal 2: Background Workers**
 ```bash
-curl -X POST http://localhost:3001/api/repos/connect \
-  -H "Content-Type: application/json" \
-  -d '{"github_repo_full_name": "owner/repo", "installation_id": 12345}'
+cd backend/webhooks
+npm run worker
 ```
 
----
-
-## 🧪 BullMQ Queues
-
-| Queue | Worker | What it does |
-|---|---|---|
-| `pr-review-queue` | Review Worker | Fetches diff → RAG retrieval → Groq review → GitHub comment |
-| `correction-queue` | Correction Worker | Processes senior edits → re-embeds corrected patterns |
-| `ingestion-queue` | Ingestion Worker | Fetches 6mo merged PRs → builds DNA → embeds in ChromaDB |
-
----
-
-## 📊 Dashboard Screens
-
-| Route | Screen | Features |
-|---|---|---|
-| `/dashboard` | Overview | Stat cards, cycle time chart, escalation gauge, accuracy sparkline |
-| `/reviews` | Explainability Log | Review table with RAG trace drawer |
-| `/dna` | Review DNA Map | Engineer cards + pattern heatmap |
-| `/escalations` | Escalation Queue | Open/resolved with resolve actions |
-
----
-
-## 🔧 Environment Variables
-
-See [`.env.example`](backend/webhooks/.env.example) for the complete list. Required:
-
-| Variable | Description |
-|---|---|
-| `GITHUB_APP_ID` | Your GitHub App ID |
-| `GITHUB_PRIVATE_KEY` | Base64-encoded private key |
-| `WEBHOOK_SECRET` | GitHub webhook secret |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `REDIS_URL` | Redis connection string |
-| `GROQ_API_KEY` | Groq API key for LLM inference |
-
----
-
-## 📁 Project Structure
-
-```
-Sensei/
-├── docker-compose.yml          # Local infrastructure
-├── backend/
-│   ├── ingestion/              # Phase 1: PR DNA ingestion pipeline
-│   │   └── src/
-│   │       ├── fetcher.js      # GitHub API: fetch merged PRs
-│   │       ├── chunker.js      # Build DNA records from diffs + comments
-│   │       └── embedder.js     # Embed and store in ChromaDB
-│   └── webhooks/               # Phase 1-3: Webhook server + workers
-│       ├── src/
-│       │   ├── server.js       # Express entry point
-│       │   ├── worker.js       # Unified BullMQ worker (3 queues)
-│       │   ├── routes/
-│       │   │   ├── webhook.js  # POST /webhooks/github
-│       │   │   ├── api.js      # REST API for dashboard
-│       │   │   └── health.js   # GET /health
-│       │   ├── services/
-│       │   │   ├── github.js   # Octokit GitHub App client
-│       │   │   ├── queue.js    # BullMQ queue manager (3 queues)
-│       │   │   ├── reviewer.js # RAG + Groq AI review engine
-│       │   │   ├── feedback.js # Self-improvement loop
-│       │   │   └── scanner.js  # Nightly proactive scanner
-│       │   ├── middleware/
-│       │   │   └── verifySignature.js
-│       │   └── db/
-│       │       └── pool.js     # PostgreSQL pool + migrations
-│       ├── scripts/
-│       │   └── seed-demo.js    # Demo data seed script
-│       └── .env.example        # Environment template
-└── frontend/
-    └── dashboard-app/          # Phase 4: React dashboard
-        └── src/
-            ├── App.tsx
-            ├── api/client.ts   # API client (mock → real)
-            ├── components/     # Sidebar, StatCard, Gauge, OutcomeBadge
-            └── pages/          # DashboardPage, ReviewsPage, DNAPage, EscalationsPage
+**Terminal 3: Frontend Dashboard**
+```bash
+cd frontend/dashboard-app
+npm run dev
 ```
 
+*(Note: For local GitHub webhook testing, use a tunneling service like [ngrok](https://ngrok.com/) pointing to your webhook server port).*
+
 ---
 
-## 🪪 License
+## 🤝 Contributing
 
-MIT
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📜 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+<div align="center">
+  <i>Built with ❤️ by Saras</i>
+</div>
