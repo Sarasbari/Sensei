@@ -3,6 +3,7 @@ import { Worker } from "bullmq";
 import IORedis from "ioredis";
 import { initGitHubApp, getInstallationOctokit, postReviewComment, escalatePR } from "./services/github.js";
 import { generateReview } from "./services/reviewer.js";
+import { handleCorrection, validateAccepted } from "./services/feedback.js";
 
 initGitHubApp();
 
@@ -17,6 +18,21 @@ const worker = new Worker(
     console.log(`\n🤖 Processing Job ${job.id} for PR #${data.pr.number} in ${data.repo.full_name}`);
 
     try {
+      if (data.event === "pull_request_review_comment.edited") {
+        await handleCorrection(data);
+        return;
+      }
+
+      if (data.event === "pull_request.closed") {
+        if (data.pr.merged) {
+          await validateAccepted(data);
+        } else {
+          console.log(`PR #${data.pr.number} closed without merging. Ignoring.`);
+        }
+        return;
+      }
+
+      // Default review generation for PR opened/synchronize
       // 1. Get Octokit for this installation
       const octokit = await getInstallationOctokit(data.installation_id);
 

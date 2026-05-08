@@ -24,6 +24,7 @@ const ACCEPTED_EVENTS = new Set([
   "pull_request.opened",
   "pull_request.synchronize",
   "pull_request_review_comment.edited",
+  "pull_request.closed"
 ]);
 
 webhookRouter.post("/github", verifySignature, async (req, res) => {
@@ -62,6 +63,7 @@ webhookRouter.post("/github", verifySignature, async (req, res) => {
       head_ref: pr.head.ref,
       created_at: pr.created_at,
       updated_at: pr.updated_at,
+      merged: pr.merged,
     },
     repo: {
       id: repo.id,
@@ -71,6 +73,17 @@ webhookRouter.post("/github", verifySignature, async (req, res) => {
     installation_id: installation?.id ?? null,
     received_at: new Date().toISOString(),
   };
+
+  // If it's a comment event, attach comment data
+  if (event === "pull_request_review_comment") {
+    jobData.comment = {
+      id: payload.comment.id,
+      body: payload.comment.body,
+      path: payload.comment.path,
+      user: payload.comment.user.login,
+      original_body: payload.changes?.body?.from || "",
+    };
+  }
 
   // ── Persist the repo if we haven't seen it ────────────────────────────
   try {
