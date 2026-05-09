@@ -15,6 +15,13 @@ function PageWrapper({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    // TEMP: Demo for PR review
+    console.log("Sensei Dashboard App mounted");
+    const testVar = "This is a temporary variable for the PR demo";
+    console.log(testVar);
+  }, []);
+
   return (
     <BrowserRouter>
       <div className="app-layout">
