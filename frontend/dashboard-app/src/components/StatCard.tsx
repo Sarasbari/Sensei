@@ -7,9 +7,10 @@ interface StatCardProps {
   color: "orange" | "amber" | "teal" | "blue" | "emerald";
   icon: ReactNode;
   isPercentage?: boolean;
+  tooltip?: string;
 }
 
-export default function StatCard({ title, value, label, color, icon, isPercentage }: StatCardProps) {
+export default function StatCard({ title, value, label, color, icon, isPercentage, tooltip }: StatCardProps) {
   const [display, setDisplay] = useState("0");
   const ref = useRef<HTMLDivElement>(null);
 
@@ -36,7 +37,7 @@ export default function StatCard({ title, value, label, color, icon, isPercentag
   }, [value, isPercentage]);
 
   return (
-    <div ref={ref} className={`stat-card ${color}`}>
+    <div ref={ref} className={`stat-card ${color}`} title={tooltip}>
       <div className="card-title" style={{ marginBottom: 8, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text-secondary)" }}>
         {title}
       </div>
